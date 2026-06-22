@@ -328,6 +328,7 @@ class ImportWizard(QDialog):
                 background = self._row_background(row_index)
                 if background is not None:
                     item.setBackground(background)
+                    item.setForeground(QColor("#111827"))
                 self.preview_table.setItem(row_index, column_index, item)
         self.preview_table.resizeColumnsToContents()
         self.preview_status.setText(
