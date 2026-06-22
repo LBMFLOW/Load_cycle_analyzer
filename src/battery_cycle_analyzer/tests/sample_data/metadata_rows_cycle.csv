@@ -1,0 +1,8 @@
+Experiment,Long aging test
+Operator,Lab A
+Notes,metadata rows precede labels
+Elapsed Time,Discharge Energy,Charge Energy,Temperature
+s,Wh,Wh,C
+0,101,106,24.9
+10,100,105,25.1
+20,99,104,25.4

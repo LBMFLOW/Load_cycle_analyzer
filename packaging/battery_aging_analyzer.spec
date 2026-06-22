@@ -8,8 +8,8 @@ from PyInstaller.utils.hooks import collect_submodules
 block_cipher = None
 
 a = Analysis(
-    ["battery_aging_app/__main__.py"],
-    pathex=[],
+    ["src/battery_cycle_analyzer/main.py"],
+    pathex=["src"],
     binaries=[],
     datas=[("sample_data", "sample_data")],
     hiddenimports=collect_submodules("pyqtgraph"),

@@ -1,25 +1,48 @@
 # Battery Aging Load-Cycle Analyzer
 
-A local Python desktop app for analyzing battery aging charge/discharge cycling CSV files. It uses PyQt6 for the UI, PyQtGraph for interactive plotting, pandas for import and tabular data, and NumPy/SciPy for analysis.
+Local desktop software for importing, plotting, sectioning, integrating, and reporting battery charge/discharge aging cycle data from CSV files.
+
+The current implementation lives in `src/battery_cycle_analyzer` and uses PyQt6, PyQtGraph, pandas, NumPy, and SciPy. CSV data stays in backend pandas DataFrames; the UI uses Qt model/view tables and controller classes for plot interaction.
 
 ## Project Structure
 
 ```text
-battery_aging_app/
-  app.py                    # Qt application entry
-  models.py                 # shared dataclasses
-  importers/                # CSV preview, parsing, mapping presets
-  analysis/                 # cleaning warnings, units, sections, metrics, integration
-  plotting/                 # cursor/table synchronization logic
-  exports/                  # CSV and HTML reporting
-  session.py                # project/session JSON state
-  ui/                       # PyQt6 windows, dialogs, table model, plot widget
-sample_data/                # minimal CSV files
-tests/                      # pytest suite for headless core behavior
-packaging/                  # PyInstaller spec
+src/battery_cycle_analyzer/
+  main.py                  # console entry point
+  app.py                   # Qt application bootstrap and logging setup
+  ui/
+    main_window.py         # menus, start screen, workspace coordination
+    import_wizard.py       # four-step CSV import workflow
+    plot_panel.py          # plot widget, toolbar, cursor controls
+    table_panel.py         # QAbstractTableModel-backed data table
+    results_panel.py       # cursor, integration, statistics output
+    dialogs.py             # export, range, and result dialogs
+    workers.py             # cancellable background tasks
+  core/
+    csv_loader.py          # preview and selected-column CSV import
+    data_model.py          # dataclasses for datasets, curves, dividers, sections
+    analysis.py            # integration, diagnostics, section statistics
+    sections.py            # pure divider/section boundary logic
+    export.py              # section CSV and metadata export
+    derived_metrics.py     # retention, efficiency, fade, smoothing, slope
+    filtering.py           # processed data views and outlier filtering
+    comparison.py          # multi-dataset comparison summaries
+    project_state.py       # JSON project save/load
+    report.py              # HTML aging report export
+    units.py               # unit conversion helpers
+  plotting/
+    plot_controller.py     # plot orchestration
+    cursor_controller.py   # trace cursor and readout lookup
+    divider_controller.py  # movable divider lines
+    section_overlay.py     # selected-section highlight overlay
+  tests/
+    sample_data/           # import fixtures
+    test_*.py              # headless core and synchronization tests
 ```
 
-## Install
+`battery_aging_app/` remains in the repository as the original prototype package. The installed commands below launch the current `battery_cycle_analyzer` app.
+
+## Installation
 
 Python 3.11 or newer is required.
 
@@ -31,58 +54,70 @@ python -m pip install -e ".[dev]"
 
 ## Run
 
+After installation:
+
+```powershell
+battery-cycle-analyzer
+```
+
+The compatibility command also launches the current app:
+
 ```powershell
 battery-aging-analyzer
 ```
 
-or:
+Without installing, run from the repository root:
 
 ```powershell
-python -m battery_aging_app
+$env:PYTHONPATH = "src"
+python -m battery_cycle_analyzer.main
 ```
 
-## Basic Usage
+## Basic Workflow
 
-1. Choose **File > Open CSV**.
-2. In the import dialog, set delimiter, decimal separator, encoding, label row, unit row, and first data row.
-3. Select the time, discharge-energy, charge-energy, and optional additional columns.
-4. Use the curve list to toggle plotted curves.
-5. Drag the vertical cursor or use the slider/spinbox to inspect synchronized plot and table values.
-6. Right-click the slider or plot to add dividers. Click plot sections to highlight rows and update integration results.
-7. Right-click a section to export section data, integrate, rename, show statistics, or remove bordering dividers.
+1. Start the app and choose **Import CSV**.
+2. In the import wizard, select delimiter, decimal separator, encoding, parameter-label row, unit row, and first data row.
+3. Map the time, discharge-energy, charge-energy, and optional additional columns. Duplicate or missing CSV labels can still be selected by column index.
+4. Review validation warnings, then import.
+5. Toggle charge/discharge curves, drag the trace cursor, or use the slider/spinbox to inspect synchronized plot and table values.
+6. Add dividers from the cursor context menu or plot toolbar. Click a section to highlight its rows and update section statistics.
+7. Right-click a selected section to save section data, integrate data, rename it, or add notes.
+8. Save the project as JSON to restore import settings, visible curves, cursor position, dividers, section selection, annotations, filters, and derived metric settings later.
 
-Column names are never assumed by the importer. All semantic roles come from the user-selected mapping.
+## Major Features
 
-## Analysis Features
-
-- Data-cleaning warnings for missing values, non-numeric cells, duplicate timestamps, non-monotonic time, irregular gaps, and large gaps.
-- Unit conversion helpers for time, energy, power, current, voltage, and capacity.
-- Derived metrics for energy retention, energy efficiency, percent fade, cycle index estimation, rolling average, and slope.
-- Trapezoidal integration over actual time values with integration-specific warnings.
-- Section-level statistics: min, max, mean, median, standard deviation, start, end, delta, and slope.
-
-## Export
-
-- Selected section CSV with a relative time column and sidecar metadata JSON.
-- Full processed dataset CSV.
-- Plot PNG/SVG from the plot toolbar.
-- HTML analysis report.
-- Project/session JSON with loaded paths, mappings, dividers, visible curves, units, and settings.
+- CSV preview and import with user-selected rows, delimiter, decimal separator, encoding, and column mappings.
+- Metadata preservation for original labels, units, selected rows, and source paths.
+- Responsive plotting of charge/discharge energy versus time with legend, grid, zoom, pan, reset, export, and curve visibility toggles.
+- Trace cursor synchronized with slider/spinbox, readout panel, and model/view data table.
+- Divider and section handling with movable/renamable/removable dividers and selected-section table highlighting.
+- Section CSV export with relative time starting at zero, original time, visible curves, metadata comments, and optional sidecar JSON.
+- Trapezoidal integration over actual time values with warnings for non-monotonic time, duplicates, missing values, and too few points.
+- Section statistics: start, end, delta, percent change, min, max, mean, median, standard deviation, slope, integral, valid points, and missing points.
+- Derived aging metrics: discharge/charge retention, energy efficiency, energy loss, percent fade, rolling mean/std, slope over time, and cycle-to-cycle delta.
+- Baseline selection from first point, first N-point mean, selected section, or manual values.
+- Processed data views with time/cycle filtering, NaN removal, duplicate timestamp handling, outlier filtering, and smoothing.
+- Multi-dataset comparison with retention overlays and combined comparison export.
+- HTML aging report export with source files, settings, summary metrics, section statistics, plots, and notes.
+- Background workers with progress/cancel support for import and heavier calculations.
+- Application logging with user-friendly error dialogs and detailed tracebacks behind **Show Details**.
 
 ## Tests
 
+Run the full suite:
+
 ```powershell
-pytest
+python -B -m pytest -p no:cacheprovider
 ```
 
-The tests cover CSV import, section creation, integration, CSV export, unit conversion, trace synchronization, metrics, and session round-tripping.
+The tests cover CSV import, mapping, malformed inputs, units, cursor lookup, interpolation, section ranges, integration, statistics, export, derived metrics, filtering, comparison, report generation, and project-state round trips.
 
 ## Packaging
 
-Packaging is intentionally separate from the core app:
+Packaging remains separate from the app logic. Build a PyInstaller bundle from the repository root:
 
 ```powershell
 pyinstaller packaging\battery_aging_analyzer.spec
 ```
 
-This creates a desktop executable bundle without changing application logic.
+The spec targets `src/battery_cycle_analyzer/main.py` and includes the sample data directory.

@@ -24,11 +24,14 @@ dev = [
 ]
 
 [project.scripts]
-battery-aging-analyzer = "battery_aging_app.__main__:main"
+battery-aging-analyzer = "battery_cycle_analyzer.main:main"
+battery-cycle-analyzer = "battery_cycle_analyzer.main:main"
 
 [tool.setuptools.packages.find]
-include = ["battery_aging_app*"]
+where = [".", "src"]
+include = ["battery_aging_app*", "battery_cycle_analyzer*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/battery_cycle_analyzer/tests"]
+pythonpath = ["src"]
 addopts = "-q"

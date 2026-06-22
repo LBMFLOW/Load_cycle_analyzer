@@ -1,0 +1,6 @@
+Time,Discharge Energy,Charge Energy,Voltage
+s,Wh,Wh,V
+0,100,105,4.2
+10,NA,104,4.1
+20,98,,4.0
+30,--,102,3.9
