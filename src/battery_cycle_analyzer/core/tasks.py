@@ -11,7 +11,7 @@ class TaskCancelled(RuntimeError):
     """Raised when a cancellable background task is stopped by the user."""
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, weakref_slot=True)
 class CancellationToken:
     _event: Event
 
