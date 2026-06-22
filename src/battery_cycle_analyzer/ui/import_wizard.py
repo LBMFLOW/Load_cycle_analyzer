@@ -101,6 +101,7 @@ class ImportWizard(QDialog):
         self.preview_table = QTableWidget()
         self.preview_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.preview_table.setAlternatingRowColors(True)
+        self.preview_status = QLabel("No preview loaded.")
 
         self.validation_text = QPlainTextEdit()
         self.validation_text.setReadOnly(True)
@@ -142,8 +143,12 @@ class ImportWizard(QDialog):
             QLabel("Step 2: identify the rows containing labels, units, and data.")
         )
         rows_layout.addLayout(row_form)
-        rows_layout.addWidget(QLabel("Preview: highlighted label, unit, and first-data rows"))
-        rows_layout.addWidget(self.preview_table, 1)
+        rows_layout.addWidget(
+            QLabel(
+                "The preview below highlights the selected label, unit, and first-data rows."
+            )
+        )
+        rows_layout.addStretch(1)
 
         mapping_tab = QWidget()
         mapping_layout = QVBoxLayout(mapping_tab)
@@ -171,6 +176,9 @@ class ImportWizard(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.steps)
+        layout.addWidget(QLabel("CSV preview: first 50 rows"))
+        layout.addWidget(self.preview_status)
+        layout.addWidget(self.preview_table, 1)
         layout.addWidget(buttons)
 
     @property
@@ -200,10 +208,12 @@ class ImportWizard(QDialog):
 
     def reload_preview(self) -> None:
         if not self.path_edit.text().strip():
+            self._clear_preview("No CSV file selected.")
             return
         try:
             self._preview = self._loader.preview(self.settings())
         except Exception as exc:
+            self._clear_preview("Preview failed.")
             self.validation_text.setPlainText(f"Preview failed: {exc}")
             return
         self._fill_preview_table()
@@ -320,6 +330,20 @@ class ImportWizard(QDialog):
                     item.setBackground(background)
                 self.preview_table.setItem(row_index, column_index, item)
         self.preview_table.resizeColumnsToContents()
+        self.preview_status.setText(
+            f"Showing {len(preview.rows)} rows and {preview.column_count} columns from {preview.path.name}."
+        )
+
+    def _clear_preview(self, message: str) -> None:
+        self._preview = None
+        self.preview_table.clear()
+        self.preview_table.setRowCount(0)
+        self.preview_table.setColumnCount(0)
+        self.time_column.clear()
+        self.discharge_column.clear()
+        self.charge_column.clear()
+        self.additional_columns.clear()
+        self.preview_status.setText(message)
 
     def _row_background(self, zero_based_row: int) -> QColor | None:
         label_row = _optional_row_value(self.label_row)
