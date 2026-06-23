@@ -31,10 +31,13 @@ class DataFrameTableModel(QAbstractTableModel):
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
             return None
-        if role == Qt.ItemDataRole.BackgroundRole and index.row() == self._current_row:
-            return QColor("#fff2b8")
-        if role == Qt.ItemDataRole.BackgroundRole and index.row() in self._highlighted_rows:
-            return QColor("#dbeafe")
+        if role == Qt.ItemDataRole.BackgroundRole:
+            if index.row() == self._current_row:
+                return QColor("#fff2b8")
+            if index.row() in self._highlighted_rows:
+                return QColor("#dbeafe")
+        if role == Qt.ItemDataRole.ForegroundRole and self._is_emphasized_row(index.row()):
+            return QColor("#111827")
         if role != Qt.ItemDataRole.DisplayRole:
             return None
         value = self._frame.iat[index.row(), index.column()]
@@ -43,6 +46,9 @@ class DataFrameTableModel(QAbstractTableModel):
         if isinstance(value, float):
             return f"{value:.8g}"
         return str(value)
+
+    def _is_emphasized_row(self, row: int) -> bool:
+        return row == self._current_row or row in self._highlighted_rows
 
     def headerData(
         self,
@@ -68,7 +74,7 @@ class DataFrameTableModel(QAbstractTableModel):
                 self.dataChanged.emit(
                     self.index(changed, 0),
                     self.index(changed, self.columnCount() - 1),
-                    [Qt.ItemDataRole.BackgroundRole],
+                    [Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.ForegroundRole],
                 )
 
     def set_highlighted_rows(self, rows: list[int]) -> None:
@@ -82,7 +88,7 @@ class DataFrameTableModel(QAbstractTableModel):
                 self.dataChanged.emit(
                     self.index(row, 0),
                     self.index(row, self.columnCount() - 1),
-                    [Qt.ItemDataRole.BackgroundRole],
+                    [Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.ForegroundRole],
                 )
 
 
@@ -129,6 +135,9 @@ class TablePanel(QWidget):
         self.view.setModel(self.proxy)
         self.view.setAlternatingRowColors(True)
         self.view.setSortingEnabled(False)
+        self.view.setStyleSheet(
+            "QTableView::item:selected { background: #fff2b8; color: #111827; }"
+        )
         controls = QHBoxLayout()
         controls.addWidget(self.search_edit, 1)
         controls.addWidget(self.columns_button)
